@@ -8,8 +8,6 @@ import (
 	"github.com/alinz/xerxes"
 	pb "github.com/alinz/xerxes/example/proto"
 	context "golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 type server struct {
@@ -27,11 +25,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cert := security.ServerTLS()
+	grpc := xerxes.NewGrpc(security)
 
-	grpcServer := grpc.NewServer(
-		grpc.Creds(credentials.NewServerTLSFromCert(cert)),
-	)
+	grpcServer := grpc.Server()
 
 	server := server{}
 
