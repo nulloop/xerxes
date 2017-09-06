@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 
+	"github.com/alinz/xerxes"
 	pb "github.com/alinz/xerxes/example/proto"
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -21,13 +22,15 @@ func (s *server) SayHello(ctx context.Context, user *pb.User) (*pb.Response, err
 }
 
 func main() {
-	creds, err := credentials.NewServerTLSFromFile("../cert/server.crt", "../cert/server.key")
+	security, err := xerxes.NewSecurity("../cert/intermediateCA.crt", "../cert/intermediateCA.pub", "../cert/server.crt", "../cert/server.key")
 	if err != nil {
-		log.Fatalf("Failed to setup tls: %v", err)
+		log.Fatal(err)
 	}
 
+	cert := security.ServerTLS()
+
 	grpcServer := grpc.NewServer(
-		grpc.Creds(creds),
+		grpc.Creds(credentials.NewServerTLSFromCert(cert)),
 	)
 
 	server := server{}

@@ -1,8 +1,11 @@
 package xerxes
 
 import (
-	"context"
+	"crypto/rsa"
+	"fmt"
 
+	jwt "github.com/dgrijalva/jwt-go"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -10,7 +13,7 @@ import (
 // store services token
 type Token interface {
 	credentials.PerRPCCredentials
-	SignToken() (string, error)
+	jwt.Claims
 }
 
 // token is simple implementation
@@ -18,19 +21,9 @@ type token struct {
 	value string
 }
 
-func (t *token) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
-	var err error
-
-	token := t.value
-	if token == "" {
-		token, err = t.SignToken()
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func (t token) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	return map[string]string{
-		"authorization": token,
+		"authorization": t.value,
 	}, nil
 }
 
@@ -40,14 +33,30 @@ func (token) RequireTransportSecurity() bool {
 }
 
 // Valid has to be here for jwt
-func (t *token) Valid() error {
+func (token) Valid() error {
 	return nil
 }
 
-func (t *token) SignToken() (string, error) {
-	return "", nil
+// NewToken gets an already created and signed token
+func NewToken(value string) (Token, error) {
+	return &token{value: value}, nil
 }
 
-func NewJwtToken() {
+// NewTokenWithSign accepts a map and a private key and create Token and sign it with
+// given private key
+func NewTokenWithSign(data map[string]interface{}, privateKey *rsa.PrivateKey) (Token, error) {
+	if privateKey == nil {
+		return nil, fmt.Errorf("need to provide private key to sign the token")
+	}
 
+	claims := jwt.MapClaims(data)
+	alg := jwt.GetSigningMethod("RS256")
+	jwtToken := jwt.NewWithClaims(alg, claims)
+
+	value, err := jwtToken.SignedString(privateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &token{value: value}, nil
 }

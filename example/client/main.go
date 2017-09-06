@@ -5,18 +5,21 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/alinz/xerxes"
 	pb "github.com/alinz/xerxes/example/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
 func main() {
-	creds, err := credentials.NewClientTLSFromFile("../cert/IntermediateCA.crt", "server")
+	security, err := xerxes.NewSecurity("../cert/intermediateCA.crt", "../cert/intermediateCA.pub", "../cert/server.crt", "../cert/server.key")
 	if err != nil {
-		log.Fatalf("cert load error: %s", err)
+		log.Fatal(err)
 	}
 
-	conn, err := grpc.Dial(":10000", grpc.WithTransportCredentials(creds))
+	tlsConfig := security.ClientTLS("server")
+
+	conn, err := grpc.Dial(":10000", grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {
 		log.Fatalf("Failed to start gRPC connection: %v", err)
 	}
