@@ -20,14 +20,16 @@ func (s *server) SayHello(ctx context.Context, user *pb.User) (*pb.Response, err
 }
 
 func main() {
-	security, err := xerxes.NewSecurity("../cert/intermediateCA.crt", "../cert/intermediateCA.pub", "../cert/server.crt", "../cert/server.key")
+	options := []xerxes.Option{
+		xerxes.OptCertificate("../cert/server.crt", "../cert/server.key"),
+	}
+
+	x, err := xerxes.New(options...)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	grpc := xerxes.NewGrpc(security)
-
-	grpcServer := grpc.Server()
+	grpcServer := x.Grpc().Server()
 
 	server := server{}
 

@@ -10,14 +10,16 @@ import (
 )
 
 func main() {
-	security, err := xerxes.NewSecurity("../cert/intermediateCA.crt", "../cert/intermediateCA.pub", "../cert/server.crt", "../cert/server.key")
+	options := []xerxes.Option{
+		xerxes.OptCertificateAuthority("../cert/intermediateCA.crt"),
+	}
+
+	x, err := xerxes.New(options...)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	grpc := xerxes.NewGrpc(security)
-
-	conn, err := grpc.Dial("server", ":10000")
+	conn, err := x.Grpc().Dial("server", ":10000")
 	if err != nil {
 		log.Fatal(err)
 	}

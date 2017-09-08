@@ -20,38 +20,6 @@ type Security struct {
 	pubKey *rsa.PublicKey
 }
 
-func (s *Security) loadPublicKey(filename string) error {
-	key, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-
-	// Parse PEM block
-	var block *pem.Block
-	if block, _ = pem.Decode(key); block == nil {
-		return fmt.Errorf("public key not encoded properly")
-	}
-
-	// Parse the key
-	var parsedKey interface{}
-	if parsedKey, err = x509.ParsePKIXPublicKey(block.Bytes); err != nil {
-		if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
-			parsedKey = cert.PublicKey
-		} else {
-			return err
-		}
-	}
-
-	var pkey *rsa.PublicKey
-	var ok bool
-	if pkey, ok = parsedKey.(*rsa.PublicKey); !ok {
-		return fmt.Errorf("given public key not valid")
-	}
-
-	s.pubKey = pkey
-	return nil
-}
-
 // ParseJwt tries to parse and check the sign value
 func (s *Security) ParseJwt(value Token) (*jwt.Token, error) {
 	tok, ok := value.(*token)
@@ -87,31 +55,58 @@ func (s *Security) ServerTLS() *tls.Certificate {
 	return s.cert
 }
 
-// NewSecurity parses and creates Security object based on Intermediate CA, Intermediate Public key,
-// signed certificate and private key
-func NewSecurity(ca, caPub, crt, key string) (*Security, error) {
-	security := Security{}
-
-	b, err := ioutil.ReadFile(ca)
+func (s *Security) loadCertificateAuthorityPublicKey(filename string) error {
+	key, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, err
-	}
-	security.cp = x509.NewCertPool()
-	if !security.cp.AppendCertsFromPEM(b) {
-		return nil, fmt.Errorf("credentials: failed to append certificates")
+		return err
 	}
 
+	// Parse PEM block
+	var block *pem.Block
+	if block, _ = pem.Decode(key); block == nil {
+		return fmt.Errorf("public key not encoded properly")
+	}
+
+	// Parse the key
+	var parsedKey interface{}
+	if parsedKey, err = x509.ParsePKIXPublicKey(block.Bytes); err != nil {
+		if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
+			parsedKey = cert.PublicKey
+		} else {
+			return err
+		}
+	}
+
+	var pkey *rsa.PublicKey
+	var ok bool
+	if pkey, ok = parsedKey.(*rsa.PublicKey); !ok {
+		return fmt.Errorf("given public key not valid")
+	}
+
+	s.pubKey = pkey
+	return nil
+}
+
+func (s *Security) loadCertificateAuthority(filename string) error {
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+
+	s.cp = x509.NewCertPool()
+	if !s.cp.AppendCertsFromPEM(b) {
+		return fmt.Errorf("credentials: failed to append certificates")
+	}
+
+	return nil
+}
+
+func (s *Security) loadCertificate(crt, key string) error {
 	cert, err := tls.LoadX509KeyPair(crt, key)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	security.cert = &cert
-
-	err = security.loadPublicKey(caPub)
-	if err != nil {
-		return nil, err
-	}
-
-	return &security, nil
+	s.cert = &cert
+	return nil
 }
