@@ -19,7 +19,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	conn, err := x.Grpc().Dial("server", ":10000")
+	conn, err := x.Grpc.Dial("server", ":10000")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -29,7 +29,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	grpcServer := x.Grpc().Server()
+	grpcServer := x.Grpc.Server()
 
 	server := server{}
 

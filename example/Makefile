@@ -15,3 +15,5 @@ serverCert:
 	@openssl genrsa -out ./cert/server.key 2048 && \
 	openssl req -new -key ./cert/server.key -out ./cert/server.csr -subj '/C=CA/ST=Ontario/O=Test/CN=server' && \
 	openssl x509 -req -in ./cert/server.csr -CA ./cert/IntermediateCA.crt -CAkey ./cert/IntermediateCA.key -set_serial 01 -out ./cert/server.crt -days 500 -sha256;
+
+setup: clean rootCA intermediateCA serverCert
