@@ -12,6 +12,7 @@ import (
 func main() {
 	options := []xerxes.Option{
 		xerxes.OptCertificateAuthority("../cert/intermediateCA.crt"),
+		xerxes.OptCertificate("../cert/client.crt", "../cert/client.key"),
 	}
 
 	x, err := xerxes.New(options...)
