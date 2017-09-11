@@ -46,8 +46,18 @@ func (s *Security) ParseJwt(value Token) (*jwt.Token, error) {
 }
 
 // ClientTLS creates tls config for specific server
+// if you want to connect to NATS, make sure the serverName is set to empty
+// or you will get `x509: certificate is not valid for any names` error
 func (s *Security) ClientTLS(serverName string) *tls.Config {
-	return &tls.Config{ServerName: serverName, RootCAs: s.cp}
+	tlsConfig := tls.Config{RootCAs: s.cp}
+	if serverName != "" {
+		tlsConfig.ServerName = serverName
+	}
+
+	if s.cert != nil {
+		tlsConfig.Certificates = []tls.Certificate{*s.cert}
+	}
+	return &tlsConfig
 }
 
 // ServerTLS returns the certificate to be used mainly in GRPC server
