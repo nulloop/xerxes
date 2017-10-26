@@ -5,32 +5,41 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+// DialFn is a function which creates grpc.ClientConn
+type DialFn func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error)
+
 // Grpc is the base for creating grpc client and server
 type Grpc struct {
 	security *Security
 }
 
-// Dial is used to make a grpc client connection with default TLS cert
-func (g *Grpc) Dial(serverName, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+// CreateDialFn is the low level, You can cache DialFn and keep using it
+func (g *Grpc) CreateDialFn(serverName string) DialFn {
 	tlsConfig := g.security.ClientTLS(serverName)
 
-	opts = append([]grpc.DialOption{
-		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-	}, opts...)
+	config := credentials.NewTLS(tlsConfig)
 
-	return grpc.Dial(target, opts...)
+	return func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+		opts = append([]grpc.DialOption{
+			grpc.WithTransportCredentials(config),
+		}, opts...)
+
+		return grpc.Dial(target, opts...)
+	}
+}
+
+// Dial is used to make a grpc client connection with default TLS cert
+func (g *Grpc) Dial(serverName, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	return g.CreateDialFn(serverName)(target, opts...)
 }
 
 // DialWithJwtToken is the same as Dial function except it adds token as well
 func (g *Grpc) DialWithJwtToken(token Token, serverName, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	tlsConfig := g.security.ClientTLS(serverName)
-
 	opts = append([]grpc.DialOption{
-		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 		grpc.WithPerRPCCredentials(token),
 	}, opts...)
 
-	return grpc.Dial(target, opts...)
+	return g.CreateDialFn(serverName)(target, opts...)
 }
 
 // Server creates grpc server based on given options. by default it uses TLS cert
