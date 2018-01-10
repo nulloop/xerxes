@@ -5,8 +5,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/alinz/xerxes"
-	pb "github.com/alinz/xerxes/example/proto"
+	"github.com/nulloop/xerxes"
+	pb "github.com/nulloop/xerxes/example/proto"
 	context "golang.org/x/net/context"
 )
 

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/alinz/xerxes"
-	pb "github.com/alinz/xerxes/example/proto"
+	"github.com/nulloop/xerxes"
+	pb "github.com/nulloop/xerxes/example/proto"
 )
 
 func main() {
